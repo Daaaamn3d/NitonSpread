@@ -1,42 +1,41 @@
+import requests
+from bs4 import BeautifulSoup
 import time
 import asyncio
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from telegram import Bot
 
-# === НАСТРОЙКИ ===
 BOT_TOKEN = "7531307637:AAE66Yu_TOQV6TegAamJ8QWVkX5Q_xFzRHk"
 CHAT_ID = 612299504
-SPREAD_LIMIT = 2.0  # пока оставим 0.0 для проверки
-CHECK_INTERVAL = 60
+SPREAD_LIMIT = 2.0
+CHECK_INTERVAL = 60  # in seconds
 
-# === НАСТРОЙКА CHROMEDRIVER ===
-chrome_options = Options()
-chrome_options.add_argument("--headless=new")
-chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--no-sandbox")
-
-service = Service("C:/selenium/driver/chromedriver.exe")  # Укажи здесь свой путь!
-driver = webdriver.Chrome(service=service, options=chrome_options)
 bot = Bot(token=BOT_TOKEN)
 
-# === ФУНКЦИЯ ПРОВЕРКИ ===
 def get_spreads():
     url = "https://uainvest.com.ua/arbitrage?type=spread&exchanges=whitebit_mexc_okx_bybit_bitget_gate_binance"
-    driver.get(url)
-    time.sleep(5)
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-    rows = driver.find_elements(By.CSS_SELECTOR, 'table tbody tr')
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    table = soup.find("table")
+    if not table:
+        return []
+
+    rows = table.find("tbody").find_all("tr")
     result = []
 
     for row in rows:
+        cols = row.find_all("td")
+        if not cols or len(cols) < 6:
+            continue
+
+        name = cols[0].text.strip()
+        spread_str = cols[-1].text.strip().replace('%', '').replace(',', '.')
         try:
-            cells = row.find_elements(By.TAG_NAME, 'td')
-            name = cells[0].text.strip()
-            spread_text = cells[-1].text.strip().replace('%', '').replace(',', '.')
-            spread = float(spread_text)
+            spread = float(spread_str)
             if spread >= SPREAD_LIMIT:
                 result.append((name, spread))
         except:
@@ -44,9 +43,8 @@ def get_spreads():
 
     return result
 
-# === АСИНХРОННЫЙ ЦИКЛ ===
 async def main_loop():
-    print("Бот запущен. Проверка раз в минуту.")
+    print("Бот запущен на Railway.")
     while True:
         try:
             found = get_spreads()
