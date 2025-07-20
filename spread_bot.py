@@ -6,7 +6,7 @@ from telegram import Bot
 
 BOT_TOKEN = "7531307637:AAE66Yu_TOQV6TegAamJ8QWVkX5Q_xFzRHk"
 CHAT_ID = 612299504
-SPREAD_LIMIT = 2.0
+SPREAD_LIMIT = 1.0
 CHECK_INTERVAL = 60  # in seconds
 
 bot = Bot(token=BOT_TOKEN)
@@ -49,7 +49,7 @@ async def main_loop():
         try:
             found = get_spreads()
             if found:
-                message = "🔔 Найдены спреды выше 2%:\n\n"
+                message = "🔔 Найдены спреды выше 1%:\n\n"
                 message += "\n".join([f"{name}: {spread:.2f}%" for name, spread in found])
                 await bot.send_message(chat_id=CHAT_ID, text=message)
                 print("Сообщение отправлено.")
