@@ -20,15 +20,15 @@ def get_spreads():
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    print("HTML длина:", len(response.text))
+    print("HTML длина:", len(response.text), flush=True)
 
     table = soup.find("table")
     if not table:
-        print("Таблица не найдена!")
+        print("Таблица не найдена!", flush=True)
         return []
 
     rows = table.find("tbody").find_all("tr")
-    print("Найдено строк:", len(rows))
+    print("Найдено строк:", len(rows), flush=True)
 
     result = []
     for row in rows:
@@ -41,14 +41,16 @@ def get_spreads():
         try:
             spread = float(spread_str)
             if spread >= SPREAD_LIMIT:
+                print(f"➡ {name}: {spread}%", flush=True)
                 result.append((name, spread))
-        except:
+        except Exception as e:
+            print(f"Ошибка преобразования: {spread_str}", flush=True)
             continue
 
     return result
 
 async def main_loop():
-    print("Бот запущен на Railway.")
+    print("Бот запущен на Railway.", flush=True)
     while True:
         try:
             found = get_spreads()
@@ -56,16 +58,13 @@ async def main_loop():
                 message = f"🔔 Найдены спреды выше {SPREAD_LIMIT}%:\n\n"
                 message += "\n".join([f"{name}: {spread:.2f}%" for name, spread in found])
                 await bot.send_message(chat_id=CHAT_ID, text=message)
-                print("Сообщение отправлено.")
+                print("Сообщение отправлено.", flush=True)
             else:
-                print("Ничего не найдено.")
+                print("Ничего не найдено.", flush=True)
         except Exception as e:
-            print("Ошибка:", e)
+            print("Ошибка:", e, flush=True)
 
         await asyncio.sleep(CHECK_INTERVAL)
-
-if __name__ == "__main__":
-    asyncio.run(main_loop())
 
 if __name__ == "__main__":
     asyncio.run(main_loop())
